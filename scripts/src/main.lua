@@ -10,21 +10,30 @@
 ---------------------------------------------------------------------------
 
 function mainProject(_target, _subtarget)
-if (_OPTIONS["SOURCES"] == nil) then
-	if (_target == _subtarget) then
-		project (_target)
-	else
-		if (_subtarget=="mess") then
-			project (_subtarget)
+	if (_OPTIONS["SOURCES"] == nil) then
+		if (_target == _subtarget) then
+			project (_target)
 		else
-			project (_target .. _subtarget)
+			if (_subtarget=="mess") then
+				project (_subtarget)
+			else
+				project (_target .. _subtarget)
+			end
 		end
+	else
+		project (_subtarget)
 	end
-else
-	project (_subtarget)
-end
 	uuid (os.uuid(_target .."_" .. _subtarget))
-	kind "ConsoleApp"
+	
+	if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
+		kind "SharedLib"
+		targetprefix "lib"
+		buildoptions {
+			"-fPIC"
+		}
+	else
+		kind "ConsoleApp"
+	end
 
 	configuration { "android*" }
 		targetprefix "lib"
@@ -111,7 +120,11 @@ end
 		end
 
 	configuration { "mingw*" or "vs20*" }
-		targetextension ".exe"
+		if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
+			targetextension ".dll"
+		else
+			targetextension ".exe"
+		end
 
 	configuration { "rpi" }
 		targetextension ""

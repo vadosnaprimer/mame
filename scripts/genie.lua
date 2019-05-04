@@ -379,8 +379,17 @@ newoption {
 
 
 newoption {
+	trigger = "MAIN_SHARED_LIB",
+	description = "Build main binary as SharedLib (not available for pnacl and winstore*)",
+	allowed = {
+		{ "0",  "Build as ConsoleApp" },
+		{ "1",  "Build as SharedLib"  },
+	},
+}
+
+newoption {
 	trigger = "SHLIB",
-	description = "Generate shared libs.",
+	description = "Build core projects as shared libs.",
 	allowed = {
 		{ "0",   "Static libs"  },
 		{ "1",   "Shared libs"  },
@@ -742,6 +751,15 @@ if _OPTIONS["NOASM"]=="1" then
 	}
 end
 
+if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
+	defines {
+		"MAME_SHARED_LIB"
+	}
+	buildoptions {
+		"-fvisibility=hidden"
+	}
+end
+
 if not _OPTIONS["FORCE_DRC_C_BACKEND"] then
 	if _OPTIONS["BIGENDIAN"]~="1" then
 		configuration { "x64" }
@@ -1078,14 +1096,14 @@ end
 				"-fdiagnostics-show-note-include-stack",
 				"-Wno-cast-align",
 				"-Wno-constant-logical-operand",
-				"-Wno-extern-c-compat",
+					"-Wno-extern-c-compat",
 				"-Wno-ignored-qualifiers",
 				"-Wno-pragma-pack", -- clang 6.0 complains when the packing change lifetime is not contained within a header file.
 				"-Wno-tautological-compare",
-				"-Wno-unknown-attributes",
+					"-Wno-unknown-attributes",
 				"-Wno-unknown-warning-option",
 				"-Wno-unused-value",
-			}
+				}
 			if ((version >= 100000) and (_OPTIONS["targetos"] ~= 'macosx')) or (version >= 120000) then
 				buildoptions {
 					"-Wno-xor-used-as-pow", -- clang 10.0 complains that expressions like 10 ^ 7 look like exponention
@@ -1276,13 +1294,13 @@ configuration { "mingw*" }
 			linkoptions {
 				"-Wl,--start-group",
 			}
-		else
+		elseif _OPTIONS["MAIN_SHARED_LIB"]~="1" then
 			linkoptions {
 				"-static",
 			}
-			flags {
-				"LinkSupportCircularDependencies",
-			}
+		flags {
+			"LinkSupportCircularDependencies",
+		}
 		end
 		links {
 			"user32",
@@ -1496,7 +1514,7 @@ end
 dofile(path.join("src", "osd", _OPTIONS["osd"] .. ".lua"))
 dofile(path.join("src", "lib.lua"))
 if opt_tool(MACHINES, "NETLIST") then
-   dofile(path.join("src", "netlist.lua"))
+dofile(path.join("src", "netlist.lua"))
 end
 --if (STANDALONE~=true) then
 dofile(path.join("src", "formats.lua"))
