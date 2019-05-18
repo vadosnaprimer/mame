@@ -755,9 +755,6 @@ if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
 	defines {
 		"MAME_SHARED_LIB"
 	}
-	buildoptions {
-		"-fvisibility=hidden"
-	}
 end
 
 if not _OPTIONS["FORCE_DRC_C_BACKEND"] then

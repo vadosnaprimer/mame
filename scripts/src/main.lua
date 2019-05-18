@@ -28,9 +28,6 @@ function mainProject(_target, _subtarget)
 	if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
 		kind "SharedLib"
 		targetprefix "lib"
-		buildoptions {
-			"-fPIC"
-		}
 	else
 		kind "ConsoleApp"
 	end
@@ -119,9 +116,18 @@ function mainProject(_target, _subtarget)
 			targetsuffix "dp"
 		end
 
-	configuration { "mingw*" or "vs20*" }
+	configuration { "mingw*" }
 		if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
-			targetextension ".dll"
+			targetextension ".dll"			
+			buildoptions {
+				"-fvisibility=hidden",
+			}
+			-- statically link these so the dll could be shipped to systems without mingw
+			linkoptions {
+				"-static-libgcc",
+				"-static-libstdc++",
+				"-Wl,-Bstatic,--whole-archive -lwinpthread -Wl,-Bdynamic,--no-whole-archive",
+			}
 		else
 			targetextension ".exe"
 		end
@@ -371,6 +377,12 @@ if (STANDALONE~=true) then
 				{ "$(OBJDIR)/mame.res" ,  GEN_DIR  .. "resource/" .. rctarget .. "vers.rc", true  },
 			}
 		end
+	end
+	
+	if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
+		files {
+			MAME_DIR .. "src/mame/exports.cpp",
+		}
 	end
 
 	local mainfile = MAME_DIR .. "src/".._target .."/" .. _subtarget ..".cpp"

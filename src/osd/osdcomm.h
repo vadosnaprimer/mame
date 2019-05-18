@@ -116,12 +116,4 @@ using ssize_t = std::make_signed_t<size_t>;
 #endif
 #endif
 
-#if defined(_MSC_VER)
-#define MAME_EXPORT extern "C" __declspec(dllexport)
-#elif defined(__GNUC__)
-#define MAME_EXPORT extern "C" __attribute__((visibility("default")))
-#else
-#define MAME_EXPORT
-#endif
-
 #endif // MAME_OSD_OSDCOMM_H
