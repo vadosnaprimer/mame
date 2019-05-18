@@ -178,7 +178,7 @@ void osd_sleep(osd_ticks_t duration)
 std::vector<std::string> osd_get_command_line(int argc, char *argv[])
 {
 	std::vector<std::string> results;
-#ifdef WIN32
+#if defined WIN32 && !defined MAME_SHARED_LIB
 	{
 		// Get the command line from Windows
 		int count;
