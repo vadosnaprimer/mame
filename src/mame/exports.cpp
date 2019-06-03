@@ -9,6 +9,9 @@
 ***************************************************************************/
 
 
+#include "exports.h"
+
+
 //**************************************************************************
 //  MACROS
 //**************************************************************************
@@ -28,7 +31,28 @@
 //  GLOBAL FUNCTIONS
 //**************************************************************************
 
+void (*log_callback)(osd_output_channel channel, int size, char *buffer) = nullptr;
+
 extern int main(int argc, char *argv[]);
+
+
+//**************************************************************************
+//  OUTPUT REDIRECTION
+//**************************************************************************
+
+void export_output::output_callback(osd_output_channel channel, const char *msg, va_list args)
+{
+	if (!log_callback)
+	{
+		chain_output(channel, msg, args);
+		return;
+	}
+
+	std::vector<char> buffer(1 + std::vsnprintf(nullptr, 0, msg, args));
+	std::vsnprintf(buffer.data(), buffer.size(), msg, args);
+
+	log_callback(channel, buffer.size(), buffer.data());
+};
 
 
 //**************************************************************************
@@ -40,7 +64,7 @@ MAME_EXPORT int mame_launch(int argc, char *argv[])
 	return main(argc, argv);
 }
 
-MAME_EXPORT int mame_five()
+MAME_EXPORT void mame_set_log_callback(void (*callback)(osd_output_channel channel, int size, char *buffer))
 {
-	return 5;
+	log_callback = callback;
 }
