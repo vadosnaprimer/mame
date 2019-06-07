@@ -342,6 +342,12 @@ end
 		ext_includedir("zlib"),
 		ext_includedir("flac"),
 	}
+	
+if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
+	includedirs {
+		ext_includedir("lua"),
+	}
+end
 
 
 if (STANDALONE==true) then
@@ -386,6 +392,7 @@ if (STANDALONE~=true) then
 	if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
 		files {
 			MAME_DIR .. "src/mame/exports.cpp",
+			MAME_DIR .. "src/mame/exports.h",
 		}
 	end
 
