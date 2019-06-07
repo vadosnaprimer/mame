@@ -26,6 +26,9 @@
 #include "pluginopts.h"
 #include "softlist.h"
 #include "inputdev.h"
+#ifdef MAME_SHARED_LIB
+#include "../../mame/exports.h"
+#endif
 
 #include <cstring>
 #include <thread>
@@ -797,6 +800,9 @@ void lua_engine::on_sound_update()
 
 void lua_engine::on_periodic()
 {
+#ifdef MAME_SHARED_LIB
+	export_periodic_callback();
+#endif
 	execute_function("LUA_ON_PERIODIC");
 }
 
@@ -2299,6 +2305,7 @@ void lua_engine::initialize()
  *                                                (switch/abs[olute]/rel[ative]/max[imum])
  * input:seq_poll() - poll once, returns true if input was fetched
  * input:seq_poll_final() - get final input_seq
+ *
  * input.device_classes - returns device classes
  */
 
@@ -2401,6 +2408,7 @@ void lua_engine::initialize()
 /*  input_device library
  *
  * manager:machine():input().device_classes[devclass].devices[index]
+ *
  * device.name
  * device.id
  * device.devindex
@@ -2427,9 +2435,11 @@ void lua_engine::initialize()
 /*  input_device_item library
  *
  * manager:machine():input().device_classes[devclass].devices[index].items[item_id]
+ *
+ * item:code()
+ *
  * item.name
  * item.token
- * item:code()
  */
 
 	auto input_device_item_type = sol().registry().create_simple_usertype<input_device_item>("new", sol::no_constructor);
@@ -3003,10 +3013,15 @@ void lua_engine::initialize()
 }
 
 //-------------------------------------------------
-//  frame_hook - called at each frame refresh, used to draw a HUD
+//  frame_hook - called at each frame refresh,
+//  used to draw a HUD
 //-------------------------------------------------
+
 bool lua_engine::frame_hook()
 {
+#ifdef MAME_SHARED_LIB
+	export_frame_callback();
+#endif
 	return execute_function("LUA_ON_FRAME_DONE");
 }
 
@@ -3039,37 +3054,42 @@ void lua_engine::resume(void *ptr, int nparam)
 	luaL_unref(m_lua_state, LUA_REGISTRYINDEX, nparam);
 }
 
-void lua_engine::run(sol::load_result res)
+//-------------------------------------------------
+//  run - run loaded script
+//-------------------------------------------------
+
+sol::object lua_engine::run(sol::load_result lr)
 {
-	if(res.valid())
+	if(lr.valid())
 	{
-		auto ret = invoke(res.get<sol::protected_function>());
-		if(!ret.valid())
-		{
-			sol::error err = ret;
-			osd_printf_error("[LUA ERROR] in run: %s\n", err.what());
-		}
+		sol::protected_function_result pfr = (lr.get<sol::protected_function>())();
+		if (pfr.valid())
+			return pfr; // implicit conversion
+		
+		sol::error err = pfr;
+		osd_printf_error("[LUA ERROR] in run: %s\n", err.what());
 	}
 	else
-		osd_printf_error("[LUA ERROR] %d loading Lua script\n", (int)res.status());
+		osd_printf_error("[LUA ERROR] %d loading Lua script\n", (int)lr.status());
+	return sol::make_object(sol(), sol::lua_nil);
 }
 
 //-------------------------------------------------
-//  execute - load and execute script
+//  load_script - execute script from file
 //-------------------------------------------------
 
-void lua_engine::load_script(const char *filename)
+sol::object lua_engine::load_script(const char *filename)
 {
-	run(sol().load_file(filename));
+	return run(sol().load_file(filename));
 }
 
 //-------------------------------------------------
-//  execute_string - execute script from string
+//  load_string - execute script from string
 //-------------------------------------------------
 
-void lua_engine::load_string(const char *value)
+sol::object lua_engine::load_string(const char *code)
 {
-	run(sol().load(value));
+	return run(sol().load(code));
 }
 
 //-------------------------------------------------

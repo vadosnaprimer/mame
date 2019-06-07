@@ -36,8 +36,8 @@ public:
 	~lua_engine();
 
 	void initialize();
-	void load_script(const char *filename);
-	void load_string(const char *value);
+	sol::object load_script(const char *filename);
+	sol::object load_string(const char *code);
 
 	bool frame_hook();
 
@@ -164,7 +164,7 @@ private:
 
 	void close();
 
-	void run(sol::load_result res);
+	sol::object run(sol::load_result res);
 
 	struct context
 	{
