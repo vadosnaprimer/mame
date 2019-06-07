@@ -25,6 +25,9 @@
 #include "natkeyboard.h"
 #include "softlist.h"
 #include "uiinput.h"
+#ifdef MAME_SHARED_LIB
+#include "../../mame/exports.h"
+#endif
 
 #include "corestr.h"
 
@@ -38,10 +41,10 @@
 
 extern "C" {
 
-int luaopen_zlib(lua_State *L);
-int luaopen_lfs(lua_State *L);
-int luaopen_linenoise(lua_State *L);
-int luaopen_lsqlite3(lua_State *L);
+	int luaopen_zlib(lua_State *L);
+	int luaopen_lfs(lua_State *L);
+	int luaopen_linenoise(lua_State *L);
+	int luaopen_lsqlite3(lua_State *L);
 
 } // extern "C"
 
@@ -60,7 +63,7 @@ struct lua_engine::devenum
 namespace {
 
 void do_draw_box(screen_device &sdev, float x1, float y1, float x2, float y2, uint32_t fgcolor, uint32_t bgcolor)
-{
+	{
 	float const sc_width(sdev.visible_area().width());
 	float const sc_height(sdev.visible_area().height());
 	x1 = std::clamp(x1, 0.0f, sc_width) / sc_width;
@@ -68,10 +71,10 @@ void do_draw_box(screen_device &sdev, float x1, float y1, float x2, float y2, ui
 	x2 = std::clamp(x2, 0.0f, sc_width) / sc_width;
 	y2 = std::clamp(y2, 0.0f, sc_height) / sc_height;
 	mame_machine_manager::instance()->ui().draw_outlined_box(sdev.container(), x1, y1, x2, y2, fgcolor, bgcolor);
-}
+			}
 
 void do_draw_line(screen_device &sdev, float x1, float y1, float x2, float y2, uint32_t color)
-{
+		{
 	float const sc_width(sdev.visible_area().width());
 	float const sc_height(sdev.visible_area().height());
 	x1 = std::clamp(x1, 0.0f, sc_width) / sc_width;
@@ -79,20 +82,20 @@ void do_draw_line(screen_device &sdev, float x1, float y1, float x2, float y2, u
 	x2 = std::clamp(x2, 0.0f, sc_width) / sc_width;
 	y2 = std::clamp(y2, 0.0f, sc_height) / sc_height;
 	sdev.container().add_line(x1, y1, x2, y2, UI_LINE_WIDTH, rgb_t(color), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA));
-}
+			}
 
 void do_draw_text(lua_State *L, screen_device &sdev, sol::object &xobj, float y, const char *msg, rgb_t fgcolor, rgb_t bgcolor)
-{
+	{
 	float const sc_width(sdev.visible_area().width());
 	float const sc_height(sdev.visible_area().height());
 	auto justify = ui::text_layout::LEFT;
 	float x = 0;
 	if (xobj.is<float>())
-	{
+		{
 		x = std::clamp(xobj.as<float>(), 0.0f, sc_width) / sc_width;
 	}
 	else if (xobj.is<char const *>())
-	{
+			{
 		char const *const justifystr(xobj.as<char const *>());
 		if (!strcmp(justifystr, "left"))
 			justify = ui::text_layout::LEFT;
@@ -102,10 +105,10 @@ void do_draw_text(lua_State *L, screen_device &sdev, sol::object &xobj, float y,
 			justify = ui::text_layout::CENTER;
 	}
 	else
-	{
+				{
 		luaL_error(L, "Error in param 1 to draw_text");
 		return;
-	}
+				}
 	y = std::clamp(y, 0.0f, sc_height) / sc_height;
 	mame_machine_manager::instance()->ui().draw_text_full(
 			sdev.container(),
@@ -113,7 +116,7 @@ void do_draw_text(lua_State *L, screen_device &sdev, sol::object &xobj, float y,
 			x, y, (1.0f - x),
 			justify, ui::text_layout::WORD,
 			mame_ui_manager::OPAQUE_, fgcolor, bgcolor);
-}
+			}
 
 
 struct image_interface_formats
@@ -125,11 +128,11 @@ struct image_interface_formats
 	static int push_key(lua_State *L, device_image_interface::formatlist_type::const_iterator const &it, std::size_t ix) { return sol::stack::push_reference(L, (*it)->name()); }
 
 	device_image_interface &image;
-};
+		};
 
 
 struct plugin_options_plugins
-{
+		{
 	plugin_options_plugins(plugin_options &o) : options(o) { }
 	std::list<plugin_options::plugin> &items() { return options.plugins(); }
 
@@ -137,39 +140,39 @@ struct plugin_options_plugins
 	static int push_key(lua_State *L, std::list<plugin_options::plugin>::const_iterator const &it, std::size_t ix) { return sol::stack::push_reference(L, it->m_name); }
 
 	plugin_options &options;
-};
+		};
 
 } // anonymous namespace
 
 
 namespace sol
-{
+		{
 
 template <> struct is_container<image_interface_formats> : std::true_type { };
 template <> struct is_container<plugin_options_plugins> : std::true_type { };
 
 
 sol::buffer *sol_lua_get(sol::types<buffer *>, lua_State *L, int index, sol::stack::record &tracking)
-{
-	return new sol::buffer(stack::get<int>(L, index), L);
-}
+			{
+				return new sol::buffer(stack::get<int>(L, index), L);
+			}
 
 int sol_lua_push(sol::types<buffer *>, lua_State *L, buffer *value)
-{
+		{
 	delete value;
-	return 1;
-}
+				return 1;
+			}
 
 
 template <typename T>
 struct usertype_container<lua_engine::devenum<T> > : lua_engine::immutable_collection_helper<lua_engine::devenum<T>, T>
-{
+		{
 private:
 	using enumerator = lua_engine::devenum<T>;
 
 	template <bool Indexed>
 	static int next_pairs(lua_State *L)
-	{
+			{
 		typename usertype_container::indexed_iterator &i(stack::unqualified_get<user<typename usertype_container::indexed_iterator> >(L, 1));
 		if (i.src.end() == i.it)
 			return stack::push(L, lua_nil);
@@ -185,13 +188,13 @@ private:
 
 	template <bool Indexed>
 	static int start_pairs(lua_State *L)
-	{
+				{
 		enumerator &self(usertype_container::get_self(L));
 		stack::push(L, next_pairs<Indexed>);
 		stack::push<user<typename usertype_container::indexed_iterator> >(L, self.iter, self.iter.begin());
 		stack::push(L, lua_nil);
 		return 3;
-	}
+				}
 
 public:
 	static int at(lua_State *L)
@@ -203,7 +206,7 @@ public:
 			return stack::push_reference(L, *dev);
 		else
 			return stack::push(L, lua_nil);
-	}
+			}
 
 	static int get(lua_State *L)
 	{
@@ -222,9 +225,9 @@ public:
 				match = check && (dynamic_cast<device_t *>(check) == dev);
 			if (match)
 				return stack::push_reference(L, *check);
-		}
-		return stack::push(L, lua_nil);
 	}
+		return stack::push(L, lua_nil);
+}
 
 	static int index_get(lua_State *L)
 	{
@@ -232,7 +235,7 @@ public:
 	}
 
 	static int index_of(lua_State *L)
-	{
+{
 		enumerator &self(usertype_container::get_self(L));
 		auto &dev(stack::unqualified_get<decltype(*self.iter.first())>(L, 2));
 		std::ptrdiff_t found(self.iter.indexof(dev));
@@ -240,28 +243,28 @@ public:
 			return stack::push(L, lua_nil);
 		else
 			return stack::push(L, found + 1);
-	}
+		}
 
 	static int size(lua_State *L)
-	{
+		{
 		enumerator &self(usertype_container::get_self(L));
 		if (0 > self.count)
 			self.count = self.iter.count();
 		return stack::push(L, self.count);
-	}
+		}
 
 	static int empty(lua_State *L)
-	{
+		{
 		enumerator &self(usertype_container::get_self(L));
 		if (0 > self.count)
 			self.count = self.iter.count();
 		return stack::push(L, !self.count);
-	}
+		}
 
 	static int next(lua_State *L) { return stack::push(L, next_pairs<false>); }
 	static int pairs(lua_State *L) { return start_pairs<false>(L); }
 	static int ipairs(lua_State *L) { return start_pairs<true>(L); }
-};
+	};
 
 
 template <>
@@ -272,7 +275,7 @@ private:
 
 public:
 	static int get(lua_State *L)
-	{
+{
 		image_interface_formats &self(get_self(L));
 		char const *const name(stack::unqualified_get<char const *>(L));
 		auto const found(std::find_if(
@@ -286,7 +289,7 @@ public:
 	}
 
 	static int index_get(lua_State *L)
-	{
+{
 		return get(L);
 	}
 };
@@ -300,7 +303,7 @@ private:
 
 public:
 	static int get(lua_State *L)
-	{
+{
 		plugin_options_plugins &self(get_self(L));
 		char const *const name(stack::unqualified_get<char const *>(L));
 		auto const found(std::find_if(
@@ -314,9 +317,9 @@ public:
 	}
 
 	static int index_get(lua_State *L)
-	{
+{
 		return get(L);
-	}
+			}
 };
 
 } // namespace sol
@@ -364,7 +367,7 @@ template <typename Handler>
 bool sol_lua_check(sol::types<osd_file::error>, lua_State *L, int index, Handler &&handler, sol::stack::record &tracking)
 {
 	return sol::stack::check<int>(L, index, std::forward<Handler>(handler));
-}
+			}
 
 
 int sol_lua_push(sol::types<screen_type_enum>, lua_State *L, screen_type_enum &&value)
@@ -611,6 +614,9 @@ void lua_engine::on_sound_update()
 
 void lua_engine::on_periodic()
 {
+#ifdef MAME_SHARED_LIB
+	export_periodic_callback();
+#endif
 	execute_function("LUA_ON_PERIODIC");
 }
 
@@ -716,11 +722,11 @@ void lua_engine::initialize()
 	sol::table emu = sol().create_named_table("emu");
 	emu["app_name"] = &emulator_info::get_appname_lower;
 	emu["app_version"] = &emulator_info::get_bare_build_version;
-	emu["gamename"] = [this] () { return machine().system().type.fullname(); };
-	emu["romname"] = [this] () { return machine().basename(); };
-	emu["softname"] = [this] () { return machine().options().software_name(); };
+	emu["gamename"] = [this](){ return machine().system().type.fullname(); };
+	emu["romname"] = [this](){ return machine().basename(); };
+	emu["softname"] = [this]() { return machine().options().software_name(); };
 	emu["keypost"] = [this] (const char *keys) { machine().natkeyboard().post_utf8(keys); };
-	emu["time"] = [this] () { return machine().time().as_double(); };
+	emu["time"] = [this](){ return machine().time().as_double(); };
 	emu["start"] =
 		[this](const char *driver)
 		{
@@ -732,24 +738,24 @@ void lua_engine::initialize()
 			}
 			return 1;
 		};
-	emu["pause"] = [this] () { return machine().pause(); };
-	emu["unpause"] = [this] () { return machine().resume(); };
+	emu["pause"] = [this](){ return machine().pause(); };
+	emu["unpause"] = [this](){ return machine().resume(); };
 	emu["step"] =
 		[this] ()
 		{
 			mame_machine_manager::instance()->ui().set_single_step(true);
 			machine().resume();
 		};
-	emu["register_prestart"] = [this] (sol::function func) { register_function(func, "LUA_ON_PRESTART"); };
-	emu["register_start"] = [this] (sol::function func) { register_function(func, "LUA_ON_START"); };
-	emu["register_stop"] = [this] (sol::function func) { register_function(func, "LUA_ON_STOP"); };
-	emu["register_pause"] = [this] (sol::function func) { register_function(func, "LUA_ON_PAUSE"); };
-	emu["register_resume"] = [this] (sol::function func) { register_function(func, "LUA_ON_RESUME"); };
-	emu["register_frame"] = [this] (sol::function func) { register_function(func, "LUA_ON_FRAME"); };
-	emu["register_frame_done"] = [this] (sol::function func) { register_function(func, "LUA_ON_FRAME_DONE"); };
-	emu["register_sound_update"] = [this] (sol::function func) { register_function(func, "LUA_ON_SOUND_UPDATE"); };
-	emu["register_periodic"] = [this] (sol::function func) { register_function(func, "LUA_ON_PERIODIC"); };
-	emu["register_mandatory_file_manager_override"] = [this] (sol::function func) { register_function(func, "LUA_ON_MANDATORY_FILE_MANAGER_OVERRIDE"); };
+	emu["register_prestart"] = [this](sol::function func){ register_function(func, "LUA_ON_PRESTART"); };
+	emu["register_start"] = [this](sol::function func){ register_function(func, "LUA_ON_START"); };
+	emu["register_stop"] = [this](sol::function func){ register_function(func, "LUA_ON_STOP"); };
+	emu["register_pause"] = [this](sol::function func){ register_function(func, "LUA_ON_PAUSE"); };
+	emu["register_resume"] = [this](sol::function func){ register_function(func, "LUA_ON_RESUME"); };
+	emu["register_frame"] = [this](sol::function func){ register_function(func, "LUA_ON_FRAME"); };
+	emu["register_frame_done"] = [this](sol::function func){ register_function(func, "LUA_ON_FRAME_DONE"); };
+	emu["register_sound_update"] = [this](sol::function func){ register_function(func, "LUA_ON_SOUND_UPDATE"); };
+	emu["register_periodic"] = [this](sol::function func){ register_function(func, "LUA_ON_PERIODIC"); };
+	emu["register_mandatory_file_manager_override"] = [this](sol::function func) { register_function(func, "LUA_ON_MANDATORY_FILE_MANAGER_OVERRIDE"); };
 	emu["register_before_load_settings"] = [this](sol::function func) { register_function(func, "LUA_ON_BEFORE_LOAD_SETTINGS"); };
 	emu["register_menu"] =
 		[this] (sol::function cb, sol::function pop, const std::string &name)
@@ -773,10 +779,10 @@ void lua_engine::initialize()
 			std::string field = "cb_" + name;
 			sol().registry()[field] = cb;
 		};
-	emu["print_verbose"] = [] (const char *str) { osd_printf_verbose("%s\n", str); };
-	emu["print_error"] = [] (const char *str) { osd_printf_error("%s\n", str); };
-	emu["print_info"] = [] (const char *str) { osd_printf_info("%s\n", str); };
-	emu["print_debug"] = [] (const char *str) { osd_printf_debug("%s\n", str); };
+	emu["print_verbose"] = [](const char *str) { osd_printf_verbose("%s\n", str); };
+	emu["print_error"] = [](const char *str) { osd_printf_error("%s\n", str); };
+	emu["print_info"] = [](const char *str) { osd_printf_info("%s\n", str); };
+	emu["print_debug"] = [](const char *str) { osd_printf_debug("%s\n", str); };
 	emu["driver_find"] =
 		[] (sol::this_state s, const char *driver) -> sol::object
 		{
@@ -788,15 +794,15 @@ void lua_engine::initialize()
 	emu["wait"] = lua_CFunction(
 			[] (lua_State *L)
 			{
-				lua_engine *engine = mame_machine_manager::instance()->lua();
-				luaL_argcheck(L, lua_isnumber(L, 1), 1, "waiting duration expected");
-				int ret = lua_pushthread(L);
-				if (ret == 1)
-					return luaL_error(L, "cannot wait from outside coroutine");
-				int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-				engine->machine().scheduler().timer_set(attotime::from_double(lua_tonumber(L, 1)), timer_expired_delegate(FUNC(lua_engine::resume), engine), ref, nullptr);
-				return lua_yield(L, 0);
-			});
+			lua_engine *engine = mame_machine_manager::instance()->lua();
+			luaL_argcheck(L, lua_isnumber(L, 1), 1, "waiting duration expected");
+			int ret = lua_pushthread(L);
+			if(ret == 1)
+				return luaL_error(L, "cannot wait from outside coroutine");
+			int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+			engine->machine().scheduler().timer_set(attotime::from_double(lua_tonumber(L, 1)), timer_expired_delegate(FUNC(lua_engine::resume), engine), ref, nullptr);
+			return lua_yield(L, 0);
+		});
 	emu["lang_translate"] = &lang_translate;
 	emu["pid"] = &osd_getpid;
 	emu["subst_env"] =
@@ -823,7 +829,7 @@ void lua_engine::initialize()
 			[] (device_t &dev, int maxdepth) { return devenum<slot_interface_enumerator>(dev, maxdepth); });
 
 
-/* emu_file library
+/*  emu_file library
  *
  * emu.file([opt] searchpath, flags) - flags can be as in osdcore "OPEN_FLAG_*" or lua style
  *                                     with 'rwc' with addtional c for create *and truncate*
@@ -888,7 +894,7 @@ void lua_engine::initialize()
 	file_type.set("open_next", &emu_file::open_next);
 	file_type.set("seek", sol::overload(
 			[](emu_file &file) { return file.tell(); },
-			[this] (emu_file &file, s64 offset, int whence) -> sol::object {
+			[this](emu_file &file, s64 offset, int whence) -> sol::object {
 				if(file.seek(offset, whence))
 					return sol::lua_nil;
 				else
@@ -1083,7 +1089,7 @@ void lua_engine::initialize()
 		});
 
 
-/* core_options library
+/*  core_options library
  *
  * manager:options()
  * manager:machine():options()
@@ -1160,7 +1166,7 @@ void lua_engine::initialize()
 	slot_option_type["default_card_software"] = sol::property(&slot_option::default_card_software);
 
 
-/* core_options::entry library
+/*  core_options::entry library
  *
  * options.entries[entry_name]
  *
@@ -1263,12 +1269,12 @@ void lua_engine::initialize()
 		};
 	machine_type["popmessage"] =
 		[] (running_machine &m, const char *str)
-		{
+				{
 			if (str)
 				m.popmessage("%s", str);
 			else
 				m.popmessage();
-		};
+			};
 	machine_type["logerror"]  = [] (running_machine &m, std::string const *str) { m.logerror("[luaengine] %s\n", str); };
 	machine_type["system"] = sol::property(&running_machine::system);
 	machine_type["video"] = sol::property(&running_machine::video);
@@ -1314,49 +1320,49 @@ void lua_engine::initialize()
 			{
 				// FIXME: this works differently to the screen orientation function and the render target orientation property
 				// it should probably be made consistent with one of them
-				std::string rot;
-				switch (driver.flags & machine_flags::MASK_ORIENTATION)
-				{
-				case machine_flags::ROT0:
-					rot = "rot0";
-					break;
-				case machine_flags::ROT90:
-					rot = "rot90";
-					break;
-				case machine_flags::ROT180:
-					rot = "rot180";
-					break;
-				case machine_flags::ROT270:
-					rot = "rot270";
-					break;
-				default:
-					rot = "undefined";
-					break;
-				}
-				return rot;
+			std::string rot;
+			switch (driver.flags & machine_flags::MASK_ORIENTATION)
+			{
+			case machine_flags::ROT0:
+				rot = "rot0";
+				break;
+			case machine_flags::ROT90:
+				rot = "rot90";
+				break;
+			case machine_flags::ROT180:
+				rot = "rot180";
+				break;
+			case machine_flags::ROT270:
+				rot = "rot270";
+				break;
+			default:
+				rot = "undefined";
+				break;
+			}
+			return rot;
 			});
 	game_driver_type["type"] = sol::property(
 			[] (game_driver const &driver)
 			{
 				// FIXME: this shouldn't be called type - there's potendial for confusion with the device type
 				// also, this should eventually go away in favour of richer flags
-				std::string type;
-				switch (driver.flags & machine_flags::MASK_TYPE)
-				{
-				case machine_flags::TYPE_ARCADE:
-					type = "arcade";
-					break;
-				case machine_flags::TYPE_CONSOLE:
-					type = "console";
-					break;
-				case machine_flags::TYPE_COMPUTER:
-					type = "computer";
-					break;
-				default:
-					type = "other";
-					break;
-				}
-				return type;
+			std::string type;
+			switch (driver.flags & machine_flags::MASK_TYPE)
+			{
+			case machine_flags::TYPE_ARCADE:
+				type = "arcade";
+				break;
+			case machine_flags::TYPE_CONSOLE:
+				type = "console";
+				break;
+			case machine_flags::TYPE_COMPUTER:
+				type = "computer";
+				break;
+			default:
+				type = "other";
+				break;
+			}
+			return type;
 			});
 	game_driver_type["not_working"] = sol::property([] (game_driver const &driver) { return (driver.flags & machine_flags::NOT_WORKING) != 0; });
 	game_driver_type["supports_save"] = sol::property([] (game_driver const &driver) { return (driver.flags & machine_flags::SUPPORTS_SAVE) != 0; });
@@ -1393,65 +1399,65 @@ void lua_engine::initialize()
 				if (!(dev.machine().debug_flags & DEBUG_FLAG_ENABLED) || !dynamic_cast<cpu_device *>(&dev)) // debugger not enabled or not CPU
 					return sol::lua_nil;
 				return sol::make_object(s, dev.debug());
-			});
+		});
 	device_type["spaces"] = sol::property(
 			[this] (device_t &dev)
 			{
 				device_memory_interface *const memdev = dynamic_cast<device_memory_interface *>(&dev);
-				sol::table sp_table = sol().create_table();
-				if (!memdev)
-					return sp_table;
-				for (int sp = 0; sp < memdev->max_space_count(); ++sp)
-				{
-					if (memdev->has_space(sp))
-						sp_table[memdev->space(sp).name()] = addr_space(memdev->space(sp), *memdev);
-				}
+			sol::table sp_table = sol().create_table();
+			if(!memdev)
 				return sp_table;
+			for(int sp = 0; sp < memdev->max_space_count(); ++sp)
+			{
+				if(memdev->has_space(sp))
+					sp_table[memdev->space(sp).name()] = addr_space(memdev->space(sp), *memdev);
+			}
+			return sp_table;
 			});
 	// FIXME: improve this
 	device_type["state"] = sol::property(
 			[this] (device_t &dev)
 			{
-				sol::table st_table = sol().create_table();
-				if(!dynamic_cast<device_state_interface *>(&dev))
-					return st_table;
-				// XXX: refrain from exporting non-visible entries?
-				for(auto &s : dev.state().state_entries())
-					st_table[s->symbol()] = s.get();
+			sol::table st_table = sol().create_table();
+			if(!dynamic_cast<device_state_interface *>(&dev))
 				return st_table;
+			// XXX: refrain from exporting non-visible entries?
+			for(auto &s : dev.state().state_entries())
+				st_table[s->symbol()] = s.get();
+			return st_table;
 			});
 	// FIXME: turn into a wrapper - it's stupid slow to walk on every property access
 	// also, this mixes up things like RAM areas with stuff saved by the device itself, so there's potential for key conflicts
 	device_type["items"] = sol::property(
 			[this] (device_t &dev)
 			{
-				sol::table table = sol().create_table();
+			sol::table table = sol().create_table();
 				std::string const tag = dev.tag();
 				for (int i = 0; ; i++)
-				{
+			{
 					char const *item;
-					void *base;
-					uint32_t size, valcount, blockcount, stride;
-					item = dev.machine().save().indexed_item(i, base, size, valcount, blockcount, stride);
-					if (!item)
-						break;
+				void *base;
+				uint32_t size, valcount, blockcount, stride;
+				item = dev.machine().save().indexed_item(i, base, size, valcount, blockcount, stride);
+				if(!item)
+					break;
 
 					char const *name = &strchr(item, '/')[1];
 					if (!strncmp(tag.c_str(), name, tag.length()) && (name[tag.length()] == '/'))
 						table[name + tag.length() + 1] = i;
 				}
-				return table;
+			return table;
 			});
 	// FIXME: this is useless in its current form
 	device_type["roms"] = sol::property(
 			[this] (device_t &dev)
 			{
-				sol::table table = sol().create_table();
-				for (auto rom : dev.rom_region_vector())
-					if (!rom.name().empty())
-						table[rom.name()] = rom;
-				return table;
-			});
+			sol::table table = sol().create_table();
+			for(auto rom : dev.rom_region_vector())
+				if(!rom.name().empty())
+					table[rom.name()] = rom;
+			return table;
+		});
 
 
 	auto screen_dev_type = sol().registry().new_usertype<screen_device>(
@@ -1478,26 +1484,26 @@ void lua_engine::initialize()
 			{ do_draw_text(m_lua_state, sdev, xobj, y, msg, mame_machine_manager::instance()->ui().colors().text_color(), 0); });
 	screen_dev_type["orientation"] =
 		[] (screen_device &sdev)
-		{
+			{
 			uint32_t flags = sdev.orientation();
 			int rotation_angle = 0;
 			switch (flags)
 			{
-			case ORIENTATION_SWAP_XY:
-			case ORIENTATION_SWAP_XY | ORIENTATION_FLIP_X:
-				rotation_angle = 90;
+				case ORIENTATION_SWAP_XY:
+				case ORIENTATION_SWAP_XY|ORIENTATION_FLIP_X:
+					rotation_angle = 90;
 				flags ^= ORIENTATION_FLIP_X;
-				break;
-			case ORIENTATION_FLIP_Y:
-			case ORIENTATION_FLIP_X | ORIENTATION_FLIP_Y:
-				rotation_angle = 180;
+					break;
+				case ORIENTATION_FLIP_Y:
+				case ORIENTATION_FLIP_X|ORIENTATION_FLIP_Y:
+					rotation_angle = 180;
 				flags ^= ORIENTATION_FLIP_X | ORIENTATION_FLIP_Y;
-				break;
-			case ORIENTATION_SWAP_XY | ORIENTATION_FLIP_Y:
-			case ORIENTATION_SWAP_XY | ORIENTATION_FLIP_X | ORIENTATION_FLIP_Y:
-				rotation_angle = 270;
+					break;
+				case ORIENTATION_SWAP_XY|ORIENTATION_FLIP_Y:
+				case ORIENTATION_SWAP_XY|ORIENTATION_FLIP_X|ORIENTATION_FLIP_Y:
+					rotation_angle = 270;
 				flags ^= ORIENTATION_FLIP_Y;
-				break;
+					break;
 			}
 			return std::tuple<int, bool, bool>(rotation_angle, flags & ORIENTATION_FLIP_X, flags & ORIENTATION_FLIP_Y);
 		};
@@ -1537,7 +1543,7 @@ void lua_engine::initialize()
 	screen_dev_type["pixel"] = [] (screen_device &sdev, s32 x, s32 y) { return sdev.pixel(x, y); };
 	screen_dev_type["pixels"] =
 		[] (screen_device &sdev, sol::this_state s)
-		{
+			{
 			// TODO: would be better if this could return a tuple of (buffer, width, height)
 			const rectangle &visarea = sdev.visible_area();
 			luaL_Buffer buff;
@@ -1608,7 +1614,7 @@ void lua_engine::initialize()
 			{
 				software_info const *const si(di.software_entry());
 				return si ? si->longname().c_str() : nullptr;
-			});
+		});
 	image_type["software_publisher"] = sol::property(
 			[] (device_image_interface &di)
 			{
@@ -1796,7 +1802,7 @@ void lua_engine::initialize()
 	dev_state_type.set("is_divider", &device_state_entry::divider);
 
 
-/* rom_entry library
+/*  rom_entry library
  *
  * manager:machine().devices[device_tag].roms[rom]
  *
@@ -1854,13 +1860,18 @@ void lua_engine::initialize()
 	initialize_input(emu);
 	initialize_memory(emu);
 	initialize_render(emu);
-}
+				}
 
 //-------------------------------------------------
-//  frame_hook - called at each frame refresh, used to draw a HUD
+//  frame_hook - called at each frame refresh,
+//  used to draw a HUD
 //-------------------------------------------------
+
 bool lua_engine::frame_hook()
 {
+#ifdef MAME_SHARED_LIB
+	export_frame_callback();
+#endif
 	return execute_function("LUA_ON_FRAME_DONE");
 }
 
@@ -1893,35 +1904,40 @@ void lua_engine::resume(void *ptr, int nparam)
 	luaL_unref(m_lua_state, LUA_REGISTRYINDEX, nparam);
 }
 
-void lua_engine::run(sol::load_result res)
+//-------------------------------------------------
+//  run - run loaded script
+//-------------------------------------------------
+
+sol::object lua_engine::run(sol::load_result lr)
 {
-	if(res.valid())
+	if(lr.valid())
 	{
-		auto ret = invoke(res.get<sol::protected_function>());
-		if(!ret.valid())
-		{
-			sol::error err = ret;
-			osd_printf_error("[LUA ERROR] in run: %s\n", err.what());
-		}
+		sol::protected_function_result pfr = (lr.get<sol::protected_function>())();
+		if (pfr.valid())
+			return pfr; // implicit conversion
+		
+		sol::error err = pfr;
+		osd_printf_error("[LUA ERROR] in run: %s\n", err.what());
 	}
 	else
-		osd_printf_error("[LUA ERROR] %d loading Lua script\n", (int)res.status());
+		osd_printf_error("[LUA ERROR] %d loading Lua script\n", (int)lr.status());
+	return sol::make_object(sol(), sol::lua_nil);
 }
 
 //-------------------------------------------------
-//  execute - load and execute script
+//  load_script - execute script from file
 //-------------------------------------------------
 
-void lua_engine::load_script(const char *filename)
+sol::object lua_engine::load_script(const char *filename)
 {
-	run(sol().load_file(filename));
+	return run(sol().load_file(filename));
 }
 
 //-------------------------------------------------
-//  execute_string - execute script from string
+//  load_string - execute script from string
 //-------------------------------------------------
 
-void lua_engine::load_string(const char *value)
+sol::object lua_engine::load_string(const char *code)
 {
-	run(sol().load(value));
+	return run(sol().load(code));
 }

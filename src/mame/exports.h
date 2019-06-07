@@ -8,17 +8,25 @@
 
 ***************************************************************************/
 
+#ifndef __EXPORTS_H__
+#define __EXPORTS_H__
 
-// MAME headers
+
 #include "osdcore.h"
 
 
 //**************************************************************************
-//  OUTPUT REDIRECTION
+//  CALLBACKS
 //**************************************************************************
+
+void export_frame_callback();
+void export_periodic_callback();
+void export_boot_callback();
 
 class export_output : public osd_output
 {
 public:
 	virtual void output_callback(osd_output_channel channel, const char *msg, va_list args) override;
 };
+
+#endif // __EXPORTS_H__
