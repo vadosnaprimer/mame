@@ -27,6 +27,9 @@
 
 #include "corestr.h"
 #include "xmlfile.h"
+#ifdef MAME_SHARED_LIB
+#include "../../mame/exports.h"
+#endif
 
 #include "osdepend.h"
 
@@ -303,6 +306,9 @@ TIMER_CALLBACK_MEMBER(mame_machine_manager::autoboot_callback)
 		std::string val = std::string("emu.keypost('").append(cmd).append("')");
 		mame_machine_manager::instance()->lua()->load_string(val.c_str());
 	}
+#ifdef MAME_SHARED_LIB
+	export_boot_callback();
+#endif
 }
 
 void mame_machine_manager::reset()
