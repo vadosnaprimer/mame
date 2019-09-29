@@ -98,6 +98,7 @@
 # OPENMP = 1
 
 # SEPARATE_BIN = 1
+# BIN_DIR = "c:\binary\location"
 # PYTHON_EXECUTABLE = python3
 # SHADOW_CHECK = 1
 # STRIP_SYMBOLS = 0
@@ -112,7 +113,7 @@
 # IGNORE_BAD_LOCALISATION=1
 # PRECOMPILE = 0
 
-# DEBUG_DIR=c:\test\location
+# DEBUG_DIR="c:\test\location"
 # DEBUG_ARGS= -window -video bgfx
 
 ifdef PREFIX_MAKEFILE
@@ -849,6 +850,10 @@ endif
 
 ifdef SEPARATE_BIN
 PARAMS += --SEPARATE_BIN='$(SEPARATE_BIN)'
+endif
+
+ifdef BIN_DIR
+PARAMS += --BIN_DIR='$(BIN_DIR)'
 endif
 
 ifdef PYTHON_EXECUTABLE
