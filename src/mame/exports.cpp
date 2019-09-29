@@ -63,7 +63,7 @@ T get_lua_value(const char *code)
 void(*frame_callback)(void) = nullptr;
 void(*periodic_callback)(void) = nullptr;
 void(*boot_callback)(void) = nullptr;
-void(*log_callback)(int channel, int size, char *buffer) = nullptr;
+void(*log_callback)(int channel, int size, const char *buffer) = nullptr;
 
 //-------------------------------------------------
 //  export_frame_callback - inform the client that
@@ -104,20 +104,18 @@ void export_boot_callback()
 //  to the client
 //-------------------------------------------------
 
-void export_output::output_callback(osd_output_channel channel, const char *msg, va_list args)
+void export_output::output_callback(osd_output_channel channel, util::format_argument_pack<std::ostream> const &args)
 {
 	// fallback to the previous osd_output on the stack if no callback is attached
 	if (!log_callback)
 	{
-		chain_output(channel, msg, args);
+		chain_output(channel, args);
 		return;
 	}
 
-	// vsnprintf to nullptr to get the end string size
-	std::vector<char> buffer(1 + std::vsnprintf(nullptr, 0, msg, args));
-	std::vsnprintf(buffer.data(), buffer.size(), msg, args);
-
-	log_callback((int)channel, buffer.size(), buffer.data());
+	std::ostringstream buffer;
+	util::stream_format(buffer, args);
+	log_callback((int)channel, buffer.str().length(), buffer.str().c_str());
 };
 
 
@@ -169,7 +167,7 @@ MAME_EXPORT void mame_set_boot_callback(void(*callback)(void))
 //  osd_common_t::output_callback
 //-------------------------------------------------
 
-MAME_EXPORT void mame_set_log_callback(void(*callback)(int channel, int size, char *buffer))
+MAME_EXPORT void mame_set_log_callback(void(*callback)(int channel, int size, const char *buffer))
 {
 	log_callback = callback;
 }
