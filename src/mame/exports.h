@@ -26,7 +26,7 @@ void export_boot_callback();
 class export_output : public osd_output
 {
 public:
-	virtual void output_callback(osd_output_channel channel, const char *msg, va_list args) override;
+	virtual void output_callback(osd_output_channel channel, util::format_argument_pack<std::ostream> const &args) override;
 };
 
 #endif // __EXPORTS_H__
