@@ -10,19 +10,19 @@
 ---------------------------------------------------------------------------
 
 function mainProject(_target, _subtarget)
-	if (_OPTIONS["SOURCES"] == nil) then
-		if (_target == _subtarget) then
-			project (_target)
-		else
-			if (_subtarget=="mess") then
-				project (_subtarget)
-			else
-				project (_target .. _subtarget)
-			end
-		end
+if (_OPTIONS["SOURCES"] == nil) then
+	if (_target == _subtarget) then
+		project (_target)
 	else
-		project (_subtarget)
+		if (_subtarget=="mess") then
+			project (_subtarget)
+		else
+			project (_target .. _subtarget)
+		end
 	end
+else
+	project (_subtarget)
+end
 	uuid (os.uuid(_target .."_" .. _subtarget))
 	
 	if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
@@ -116,7 +116,7 @@ function mainProject(_target, _subtarget)
 			targetsuffix "dp"
 		end
 
-	configuration { "mingw*" }
+	configuration { "mingw*" or "vs20*" }
 		if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
 			targetextension ".dll"			
 			buildoptions {

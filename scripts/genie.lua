@@ -1098,14 +1098,14 @@ end
 				"-fdiagnostics-show-note-include-stack",
 				"-Wno-cast-align",
 				"-Wno-constant-logical-operand",
-					"-Wno-extern-c-compat",
+				"-Wno-extern-c-compat",
 				"-Wno-ignored-qualifiers",
 				"-Wno-pragma-pack", -- clang 6.0 complains when the packing change lifetime is not contained within a header file.
 				"-Wno-tautological-compare",
-					"-Wno-unknown-attributes",
+				"-Wno-unknown-attributes",
 				"-Wno-unknown-warning-option",
 				"-Wno-unused-value",
-				}
+			}
 			if ((version >= 100000) and (_OPTIONS["targetos"] ~= 'macosx')) or (version >= 120000) then
 				buildoptions {
 					"-Wno-xor-used-as-pow", -- clang 10.0 complains that expressions like 10 ^ 7 look like exponention
@@ -1296,13 +1296,13 @@ configuration { "mingw*" }
 			linkoptions {
 				"-Wl,--start-group",
 			}
-		elseif _OPTIONS["MAIN_SHARED_LIB"]~="1" then
+		else
 			linkoptions {
 				"-static",
 			}
-		flags {
-			"LinkSupportCircularDependencies",
-		}
+			flags {
+				"LinkSupportCircularDependencies",
+			}
 		end
 		links {
 			"user32",
@@ -1516,7 +1516,7 @@ end
 dofile(path.join("src", "osd", _OPTIONS["osd"] .. ".lua"))
 dofile(path.join("src", "lib.lua"))
 if opt_tool(MACHINES, "NETLIST") then
-dofile(path.join("src", "netlist.lua"))
+   dofile(path.join("src", "netlist.lua"))
 end
 --if (STANDALONE~=true) then
 dofile(path.join("src", "formats.lua"))
