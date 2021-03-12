@@ -390,6 +390,9 @@ if (STANDALONE~=true) then
 	end
 	
 	if _OPTIONS["MAIN_SHARED_LIB"]=="1" then
+		includedirs {
+			MAME_DIR .. "3rdparty/sol2",
+		}
 		files {
 			MAME_DIR .. "src/mame/exports.cpp",
 			MAME_DIR .. "src/mame/exports.h",
